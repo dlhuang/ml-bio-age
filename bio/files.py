@@ -1,8 +1,7 @@
+from functools import reduce
 import pandas as pd
-
 import requests
 import xport
-
 from bio.columns import input_col_map, output_col_map, all_cols
 
 NHANES_BASE_URL = 'https://wwwn.cdc.gov/Nchs/Nhanes/'
@@ -38,60 +37,54 @@ input_files = {
         'L06BMT_C',
         'L06TFR_C',
         'L13AM_C',
-        'L13AM_C',
         'L40FE_C',
     ],
     '2005-2006': [
         'CBC_D',
         'DEMO_D',
         'HDL_D',
-        'TRIGLY_D',
-        'TCHOL_D',
         'BIOPRO_D',
-        'HCY_D',
         'FERTIN_D',
         'FETIB_D',
+        'TCHOL_D',
     ],
     '2007-2008': [
         'CBC_E',
         'DEMO_E',
         'BIOPRO_E',
         'HDL_E',
-        'TRIGLY_E',
-        'TCHOL_E',
         'FERTIN_E',
+        'TCHOL_E',
     ],
     '2009-2010': [
         'CBC_F',
         'BIOPRO_F',
         'DEMO_F',
         'HDL_F',
-        'TRIGLY_F',
-        'TCHOL_F',
         'FERTIN_F',
+        'TCHOL_F',
     ],
     '2011-2012': [
         'CBC_G',
         'DEMO_G',
         'HDL_G',
-        'TRIGLY_G',
-        'TCHOL_G',
         'BIOPRO_G',
+        'TCHOL_G',
     ],
     '2013-2014': [
         'CBC_H',
         'DEMO_H',
         'HDL_H',
-        'TRIGLY_H',
-        'TCHOL_H',
         'BIOPRO_H',
+        'TCHOL_H',
+        'TRIGLY_H',
     ],
     '2015-2016': [
         'CBC_I',
         'DEMO_I',
         'HDL_I',
-        'TCHOL_I',
         'BIOPRO_I',
+        'TCHOL_I',
     ]
 }
 
@@ -127,6 +120,28 @@ def get_df(datadir, fname, key):
 def join_input(datadir, year, key='SEQN'):
     dfs = [get_df(datadir, fname, key) for fname in input_files[year]]
     df = pd.concat(dfs, ignore_index=True, sort=False)
+    df = reduce(lambda x, y: x.merge(y,
+                                     left_index=True,
+                                     right_index=True,
+                                     how='outer',
+                                     suffixes=('', '_y')),
+				dfs)
+
     year = int(year.split('-')[0])
     df['YEAR'] = [year] * len(df)
     return df
+
+def join_all(datadir):
+    dfs = []
+    included_markers = input_col_map.values()
+    for year in sorted(input_files.keys(), reverse=True):
+        df = join_input(datadir, year)
+        dfs.append(df)
+        print(f'Checking for missing columns in {year}... ', end='')
+        diff = df.columns.symmetric_difference(included_markers).drop('YEAR')
+        if len(diff) == 0:
+            print('OK')
+            continue
+        print('\nMissing columns: {}'.format(', '.join([f'"{d}"' for d in diff])))
+    print('Done')
+    return pd.concat(dfs, ignore_index=True, sort=False)
