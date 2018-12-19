@@ -54,6 +54,7 @@ input_col_map = {
   'LBDLDL': 'LDL-C',
   'LBXMPSI': 'MPV',
 }
+included_markers = input_col_map.values()
 
 output_col_map = {
     'YEAR': 'YEAR',
