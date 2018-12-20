@@ -7,6 +7,15 @@ from xgboost import XGBRegressor
 from eli5 import explain_prediction_df
 from .plot import plot_importance2, plot_regression, plot_shap
 
+def get_ct(df, gender=None, age=None):
+    '''Grab a copy and filter the preprocessed data'''
+    ct = df.copy()
+    if gender is not None:
+        ct = ct[ct['PATIENT_GNDR'] == gender]
+    if age is not None:
+        ct = ct[ct['PATIENT_AGE_YEARS'] > age]
+    return ct
+
 def predict_and_plot(ct, m):
     mask = ct[m].notnull()
     dataset = ct[mask]

@@ -33,8 +33,10 @@ def plot_regression(y_pred, y_test):
 def plot_shap(X, model, label):
     shap_values = shap.TreeExplainer(model).shap_values(X.values)
     pyplot.figure()#figsize=(10, 15))
-    title = f'SHAP Summary {label}'
+    title = f'SHAP summary {label}'
     pyplot.title(title)
     shap.summary_plot(shap_values, X)
     pyplot.show()
-
+    title = f'SHAP dependence for {label}'
+    for col in X.columns.difference(['PATIENT_AGE_YEARS', 'PATIENT_GNDR']):
+        shap.dependence_plot(col, shap_values, X, interaction_index=None)
